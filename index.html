@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bird Notepad</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+}
+
+body{
+    background:#111;
+    color:#fff;
+    font-family:Arial,sans-serif;
+    overflow:hidden;
+}
+
+#app{
+    width:100%;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+header{
+    height:58px;
+    min-height:58px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:0 13px;
+    background:#181818;
+    border-bottom:1px solid #2b2b2b;
+}
+
+.logo{
+    font-size:19px;
+    font-weight:bold;
+}
+
+.spacer{
+    flex:1;
+}
+
+button{
+    border:1px solid #383838;
+    background:#222;
+    color:#fff;
+    border-radius:9px;
+    padding:9px 13px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#303030;
+}
+
+.editor-wrap{
+    position:relative;
+    flex:1;
+    min-height:0;
+}
+
+#lineNumbers{
+    position:absolute;
+    left:0;
+    top:0;
+    width:55px;
+    height:100%;
+    padding:18px 10px;
+    background:#151515;
+    color:#555;
+    text-align:right;
+    overflow:hidden;
+    user-select:none;
+    font-family:Consolas,monospace;
+    font-size:14px;
+    line-height:1.6;
+    white-space:pre;
+}
+
+#editor{
+    position:absolute;
+    left:55px;
+    top:0;
+    width:calc(100% - 55px);
+    height:100%;
+    resize:none;
+    outline:none;
+    border:0;
+    padding:18px;
+    background:#111;
+    color:#eee;
+    font-family:Consolas,monospace;
+    font-size:15px;
+    line-height:1.6;
+    white-space:pre;
+    overflow:auto;
+}
+
+footer{
+    height:40px;
+    min-height:40px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:0 14px;
+    background:#181818;
+    border-top:1px solid #2b2b2b;
+    color:#888;
+    font-size:12px;
+}
+
+footer b{
+    color:#fff;
+}
+
+#status{
+    margin-left:auto;
+}
+
+/* MENU */
+
+.overlay{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    padding-top:70px;
+    background:#0009;
+    z-index:100;
+}
+
+.panel{
+    width:390px;
+    max-width:calc(100% - 24px);
+    max-height:80vh;
+    overflow:auto;
+    padding:16px;
+    background:#1b1b1b;
+    border:1px solid #3a3a3a;
+    border-radius:14px;
+    box-shadow:0 15px 50px #000;
+}
+
+.panel h3{
+    margin:0 0 15px;
+}
+
+.panel input{
+    width:100%;
+    padding:11px;
+    margin-bottom:12px;
+    border:1px solid #3b3b3b;
+    border-radius:8px;
+    outline:none;
+    background:#111;
+    color:#fff;
+}
+
+.panel-buttons{
+    display:flex;
+    gap:8px;
+}
+
+.panel-buttons button{
+    flex:1;
+}
+
+.saved-title{
+    color:#999;
+    font-size:12px;
+    margin:8px 0;
+}
+
+.file-list{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    margin-bottom:12px;
+}
+
+.saved-file{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:9px;
+    background:#111;
+    border:1px solid #333;
+    border-radius:9px;
+}
+
+.file-name{
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.file-btn{
+    padding:7px 10px;
+}
+
+.delete-file{
+    background:#321919;
+    border-color:#633333;
+}
+
+.delete-file:hover{
+    background:#542222;
+}
+
+.empty{
+    padding:14px;
+    text-align:center;
+    color:#666;
+    border:1px dashed #333;
+    border-radius:9px;
+}
+
+@media(max-width:600px){
+
+    header{
+        padding:0 7px;
+    }
+
+    .logo{
+        font-size:16px;
+    }
+
+    header button{
+        padding:8px 9px;
+    }
+
+    #lineNumbers{
+        width:42px;
+        padding-right:7px;
+    }
+
+    #editor{
+        left:42px;
+        width:calc(100% - 42px);
+        padding:15px;
+        font-size:14px;
+    }
+
+    footer{
+        gap:8px;
+        font-size:10px;
+    }
+
+    #limit{
+        display:none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+<header>
+
+    <div class="logo">
+        Bird Notepad
+    </div>
+
+    <div class="spacer"></div>
+
+    <button id="saveBtn">Save</button>
+    <button id="loadBtn">Load</button>
+    <button id="clearBtn">Clear</button>
+
+</header>
+
+<div class="editor-wrap">
+
+    <div id="lineNumbers">1</div>
+
+    <textarea
+        id="editor"
+        spellcheck="false"
+        placeholder="Start writing..."
+    ></textarea>
+
+</div>
+
+<footer>
+
+    <span>
+        Characters:
+        <b id="count">0</b>
+    </span>
+
+    <span>
+        Lines:
+        <b id="lines">1</b>
+    </span>
+
+    <span id="limit">
+        Limit:
+        <b>100000000000000000</b>
+    </span>
+
+    <span id="status">
+        Ready
+    </span>
+
+</footer>
+
+</div>
+
+
+<!-- SAVE -->
+
+<div class="overlay" id="saveMenu">
+
+    <div class="panel">
+
+        <h3>Save</h3>
+
+        <input
+            id="saveName"
+            type="text"
+            placeholder="Name file"
+            value="BirdNote"
+        >
+
+        <div class="panel-buttons">
+
+            <button id="saveConfirm">
+                Save
+            </button>
+
+            <button id="saveCancel">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- LOAD -->
+
+<div class="overlay" id="loadMenu">
+
+    <div class="panel">
+
+        <h3>Load</h3>
+
+        <div class="saved-title">
+            FILE ĐÃ LƯU
+        </div>
+
+        <div
+            id="fileList"
+            class="file-list"
+        ></div>
+
+        <div class="panel-buttons">
+
+            <button id="refreshBtn">
+                Refresh
+            </button>
+
+            <button id="loadCancel">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+"use strict";
+
+
+const editor =
+    document.getElementById("editor");
+
+const count =
+    document.getElementById("count");
+
+const lines =
+    document.getElementById("lines");
+
+const lineNumbers =
+    document.getElementById("lineNumbers");
+
+const status =
+    document.getElementById("status");
+
+const saveMenu =
+    document.getElementById("saveMenu");
+
+const loadMenu =
+    document.getElementById("loadMenu");
+
+const saveName =
+    document.getElementById("saveName");
+
+const fileList =
+    document.getElementById("fileList");
+
+
+const INDEX_KEY =
+    "BirdNotepad_Index";
+
+const DRAFT_KEY =
+    "BirdNotepad_Draft";
+
+
+/* =========================
+   EDITOR
+========================= */
+
+function updateEditor(){
+
+    count.textContent =
+        editor.value.length.toLocaleString();
+
+    const total =
+        editor.value.length === 0
+        ? 1
+        : editor.value.split("\n").length;
+
+    lines.textContent =
+        total.toLocaleString();
+
+    let nums = "";
+
+    for(let i = 1; i <= total; i++){
+        nums += i + "\n";
+    }
+
+    lineNumbers.textContent = nums;
+}
+
+
+editor.addEventListener(
+    "input",
+    function(){
+
+        updateEditor();
+
+        try{
+
+            localStorage.setItem(
+                DRAFT_KEY,
+                editor.value
+            );
+
+            status.textContent =
+                "Auto saved";
+
+        }catch(e){
+
+            status.textContent =
+                "Autosave error";
+        }
+    }
+);
+
+
+editor.addEventListener(
+    "scroll",
+    function(){
+
+        lineNumbers.scrollTop =
+            editor.scrollTop;
+    }
+);
+
+
+/* =========================
+   START
+========================= */
+
+try{
+
+    const draft =
+        localStorage.getItem(
+            DRAFT_KEY
+        );
+
+    if(draft !== null){
+        editor.value = draft;
+    }
+
+}catch(e){}
+
+updateEditor();
+
+
+/* =========================
+   SAVE MENU
+========================= */
+
+document
+.getElementById("saveBtn")
+.addEventListener(
+    "click",
+    function(){
+
+        saveMenu.style.display = "flex";
+
+        saveName.focus();
+        saveName.select();
+    }
+);
+
+
+/* =========================
+   GET FILE INDEX
+========================= */
+
+function getFiles(){
+
+    const result = [];
+
+    const indexRaw =
+        localStorage.getItem(
+            INDEX_KEY
+        );
+
+    if(indexRaw){
+
+        try{
+
+            const ids =
+                JSON.parse(indexRaw);
+
+            if(Array.isArray(ids)){
+
+                ids.forEach(function(id){
+
+                    const raw =
+                        localStorage.getItem(
+                            "BirdNotepad_File_" + id
+                        );
+
+                    if(raw){
+
+                        try{
+
+                            const data =
+                                JSON.parse(raw);
+
+                            result.push(data);
+
+                        }catch(e){}
+                    }
+                });
+            }
+
+        }catch(e){}
+    }
+
+    return result;
+}
+
+
+/* =========================
+   SAVE
+========================= */
+
+document
+.getElementById("saveConfirm")
+.addEventListener(
+    "click",
+    function(){
+
+        let name =
+            saveName.value.trim();
+
+        if(!name){
+            name = "BirdNote";
+        }
+
+        const id =
+            "file_" +
+            Date.now() +
+            "_" +
+            Math.random()
+            .toString(36)
+            .substring(2);
+
+
+        const data = {
+
+            id:id,
+
+            name:name,
+
+            content:editor.value,
+
+            time:Date.now()
+        };
+
+
+        try{
+
+            localStorage.setItem(
+                "BirdNotepad_File_" + id,
+                JSON.stringify(data)
+            );
+
+
+            let ids = [];
+
+            const old =
+                localStorage.getItem(
+                    INDEX_KEY
+                );
+
+            if(old){
+
+                try{
+
+                    ids = JSON.parse(old);
+
+                    if(!Array.isArray(ids)){
+                        ids = [];
+                    }
+
+                }catch(e){
+
+                    ids = [];
+                }
+            }
+
+
+            ids.push(id);
+
+
+            localStorage.setItem(
+                INDEX_KEY,
+                JSON.stringify(ids)
+            );
+
+
+            localStorage.setItem(
+                DRAFT_KEY,
+                editor.value
+            );
+
+
+            saveMenu.style.display =
+                "none";
+
+
+            status.textContent =
+                "Saved: " + name;
+
+
+        }catch(error){
+
+            status.textContent =
+                "Save failed";
+        }
+    }
+);
+
+
+/* =========================
+   LOAD MENU
+========================= */
+
+document
+.getElementById("loadBtn")
+.addEventListener(
+    "click",
+    function(){
+
+        renderFiles();
+
+        loadMenu.style.display =
+            "flex";
+    }
+);
+
+
+/* =========================
+   RENDER FILES
+========================= */
+
+function renderFiles(){
+
+    fileList.innerHTML = "";
+
+
+    const files =
+        getFiles();
+
+
+    if(files.length === 0){
+
+        const empty =
+            document.createElement("div");
+
+        empty.className =
+            "empty";
+
+        empty.textContent =
+            "Chưa có file đã lưu";
+
+        fileList.appendChild(empty);
+
+        return;
+    }
+
+
+    files.reverse();
+
+
+    files.forEach(function(file){
+
+        const row =
+            document.createElement("div");
+
+        row.className =
+            "saved-file";
+
+
+        const name =
+            document.createElement("div");
+
+        name.className =
+            "file-name";
+
+        name.textContent =
+            file.name;
+
+
+        /* LOAD BUTTON */
+
+        const load =
+            document.createElement("button");
+
+        load.className =
+            "file-btn";
+
+        load.textContent =
+            "Load";
+
+
+        load.addEventListener(
+            "click",
+            function(){
+
+                loadFile(file.id);
+            }
+        );
+
+
+        /* DELETE BUTTON */
+
+        const del =
+            document.createElement("button");
+
+        del.className =
+            "file-btn delete-file";
+
+        del.textContent =
+            "Delete";
+
+
+        del.addEventListener(
+            "click",
+            function(){
+
+                deleteFile(file.id);
+            }
+        );
+
+
+        row.appendChild(name);
+        row.appendChild(load);
+        row.appendChild(del);
+
+        fileList.appendChild(row);
+
+    });
+}
+
+
+/* =========================
+   LOAD FILE
+========================= */
+
+function loadFile(id){
+
+    const key =
+        "BirdNotepad_File_" + id;
+
+    const raw =
+        localStorage.getItem(key);
+
+
+    if(!raw){
+
+        status.textContent =
+            "File không tồn tại";
+
+        renderFiles();
+
+        return;
+    }
+
+
+    try{
+
+        const file =
+            JSON.parse(raw);
+
+
+        editor.value =
+            file.content || "";
+
+
+        updateEditor();
+
+
+        localStorage.setItem(
+            DRAFT_KEY,
+            editor.value
+        );
+
+
+        loadMenu.style.display =
+            "none";
+
+
+        status.textContent =
+            "Loaded: " + file.name;
+
+
+        editor.focus();
+
+
+    }catch(error){
+
+        status.textContent =
+            "Load error";
+    }
+}
+
+
+/* =========================
+   DELETE FILE - FIXED
+========================= */
+
+function deleteFile(id){
+
+    const key =
+        "BirdNotepad_File_" + id;
+
+
+    /* XÓA FILE */
+
+    localStorage.removeItem(key);
+
+
+    /* LẤY INDEX HIỆN TẠI */
+
+    let ids = [];
+
+
+    try{
+
+        const raw =
+            localStorage.getItem(
+                INDEX_KEY
+            );
+
+        if(raw){
+
+            ids =
+                JSON.parse(raw);
+
+            if(!Array.isArray(ids)){
+                ids = [];
+            }
+        }
+
+    }catch(error){
+
+        ids = [];
+    }
+
+
+    /* XÓA ID */
+
+    ids =
+        ids.filter(function(fileId){
+
+            return String(fileId) !==
+                   String(id);
+        });
+
+
+    /* LƯU INDEX MỚI */
+
+    localStorage.setItem(
+        INDEX_KEY,
+        JSON.stringify(ids)
+    );
+
+
+    /* HIỆN DANH SÁCH MỚI NGAY */
+
+    renderFiles();
+
+
+    status.textContent =
+        "File deleted";
+}
+
+
+/* =========================
+   CLEAR
+========================= */
+
+document
+.getElementById("clearBtn")
+.addEventListener(
+    "click",
+    function(){
+
+        editor.value = "";
+
+
+        /* XÓA AUTOSAVE */
+
+        localStorage.removeItem(
+            DRAFT_KEY
+        );
+
+
+        updateEditor();
+
+
+        status.textContent =
+            "Cleared";
+
+
+        editor.focus();
+    }
+);
+
+
+/* =========================
+   REFRESH
+========================= */
+
+document
+.getElementById("refreshBtn")
+.addEventListener(
+    "click",
+    function(){
+
+        renderFiles();
+    }
+);
+
+
+/* =========================
+   CANCEL
+========================= */
+
+document
+.getElementById("saveCancel")
+.addEventListener(
+    "click",
+    function(){
+
+        saveMenu.style.display =
+            "none";
+    }
+);
+
+
+document
+.getElementById("loadCancel")
+.addEventListener(
+    "click",
+    function(){
+
+        loadMenu.style.display =
+            "none";
+    }
+);
+
+
+/* =========================
+   ESC
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(e){
+
+        if(e.key === "Escape"){
+
+            saveMenu.style.display =
+                "none";
+
+            loadMenu.style.display =
+                "none";
+        }
+    }
+);
+
+
+/* =========================
+   TAB
+========================= */
+
+editor.addEventListener(
+    "keydown",
+    function(e){
+
+        if(e.key === "Tab"){
+
+            e.preventDefault();
+
+            const start =
+                editor.selectionStart;
+
+            const end =
+                editor.selectionEnd;
+
+
+            editor.value =
+                editor.value.slice(0,start)
+                +
+                "    "
+                +
+                editor.value.slice(end);
+
+
+            editor.selectionStart =
+                start + 4;
+
+            editor.selectionEnd =
+                start + 4;
+
+
+            updateEditor();
+
+
+            localStorage.setItem(
+                DRAFT_KEY,
+                editor.value
+            );
+        }
+    }
+);
+
+
+/* =========================
+   CTRL + S
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(e){
+
+        if(
+            (e.ctrlKey || e.metaKey) &&
+            e.key.toLowerCase() === "s"
+        ){
+
+            e.preventDefault();
+
+            saveMenu.style.display =
+                "flex";
+
+            saveName.focus();
+            saveName.select();
+        }
+    }
+);
+
+
+/* =========================
+   CTRL + O
+========================= */
+
+document.addEventListener(
+    "keydown",
+    function(e){
+
+        if(
+            (e.ctrlKey || e.metaKey) &&
+            e.key.toLowerCase() === "o"
+        ){
+
+            e.preventDefault();
+
+            renderFiles();
+
+            loadMenu.style.display =
+                "flex";
+        }
+    }
+);
+
+
+/* =========================
+   ENTER SAVE
+========================= */
+
+saveName.addEventListener(
+    "keydown",
+    function(e){
+
+        if(e.key === "Enter"){
+
+            document
+            .getElementById("saveConfirm")
+            .click();
+        }
+    }
+);
+
+</script>
+
+</body>
+</html>
